@@ -1,3 +1,4 @@
+use console::style;
 use serde_json;
 use serde::{Deserialize};
 
@@ -33,6 +34,14 @@ struct Data {
     forecast: Vec<Day>,
 }
 
+impl Data {
+    pub fn display(self) {
+        println!("温度: {}  湿度: {}", self.temperature, self.humidity);
+        println!("pm2.5: {}  pm10: {}", self.pm25, self.pm10);
+        println!("空气质量: {}", self.quality);
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct CityInfo {
     city: String,
@@ -43,6 +52,12 @@ struct CityInfo {
     update_time: String,
 }
 
+impl CityInfo {
+    pub fn display(self) {
+        println!("城市: {}", self.city);
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct Weather {
     message: String,
@@ -50,8 +65,19 @@ struct Weather {
     date: String,
     time: String,
     #[serde(rename="cityInfo")]
-    city_info: CityInfo,
+    city: CityInfo,
     data: Data
+}
+
+impl Weather {
+    pub fn display(self) {
+        if self.status != 200 {
+            println!("{}", style("Query weather failed").red());
+        } else {
+            self.city.display();
+            self.data.display();
+        }
+    }
 }
     
 pub fn get_weather(city: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -60,7 +86,7 @@ pub fn get_weather(city: &str) -> Result<(), Box<dyn std::error::Error>> {
     let context = reqwest::blocking::get(path)?.text()?;
 
     let weather: Weather = serde_json::from_str(&context)?;
-    println!("{:?}", weather);
+    weather.display();
 
     Ok(())
 }
